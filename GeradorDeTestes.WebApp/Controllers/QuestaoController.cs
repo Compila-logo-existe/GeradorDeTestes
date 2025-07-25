@@ -1,5 +1,6 @@
 ﻿using GeradorDeTestes.Dominio.ModuloMateria;
 using GeradorDeTestes.Dominio.ModuloQuestao;
+using GeradorDeTestes.Dominio.ModuloTeste;
 using GeradorDeTestes.Infraestrutura.ORM.Compartilhado;
 using GeradorDeTestes.WebApp.Extensions;
 using GeradorDeTestes.WebApp.Models;
@@ -15,12 +16,15 @@ public class QuestaoController : Controller
     private readonly GeradorDeTestesDbContext contexto;
     private readonly IRepositorioMateria repositorioMateria;
     private readonly IRepositorioQuestao repositorioQuestao;
+    private readonly IRepositorioTeste repositorioTeste;
 
-    public QuestaoController(GeradorDeTestesDbContext contexto, IRepositorioMateria repositorioMateria, IRepositorioQuestao repositorioQuestao)
+    public QuestaoController(GeradorDeTestesDbContext contexto, IRepositorioMateria repositorioMateria,
+        IRepositorioQuestao repositorioQuestao, IRepositorioTeste repositorioTeste)
     {
         this.contexto = contexto;
         this.repositorioMateria = repositorioMateria;
         this.repositorioQuestao = repositorioQuestao;
+        this.repositorioTeste = repositorioTeste;
     }
 
     public IActionResult Index()
@@ -51,8 +55,9 @@ public class QuestaoController : Controller
     [HttpPost("cadastrar")]
     public IActionResult Cadastrar(CadastrarQuestaoViewModel cadastrarVM)
     {
-        if (repositorioQuestao.SelecionarRegistros()
-            .Any(q => q.Enunciado == cadastrarVM.Enunciado && q.Materia.Id == cadastrarVM.MateriaId))
+        List<Questao> questoes = repositorioQuestao.SelecionarRegistros();
+
+        if (questoes.Any(q => q.Enunciado.Equals(cadastrarVM.Enunciado) && q.Materia.Id.Equals(cadastrarVM.MateriaId)))
             ModelState.AddModelError("ConflitoCadastro", "Já existe uma questão com este enunciado para a mesma matéria.");
 
         if (!ModelState.IsValid)
@@ -105,8 +110,9 @@ public class QuestaoController : Controller
     [HttpPost("editar/{id:guid}")]
     public IActionResult Editar(Guid id, EditarQuestaoViewModel editarVM)
     {
-        if (repositorioQuestao.SelecionarRegistros()
-            .Any(q => q.Enunciado == editarVM.Enunciado && q.Materia.Id == editarVM.MateriaId && q.Id != id))
+        List<Questao> questoes = repositorioQuestao.SelecionarRegistros();
+
+        if (questoes.Any(q => q.Enunciado.Equals(editarVM.Enunciado) && q.Materia.Id.Equals(editarVM.MateriaId) && q.Id != id))
             ModelState.AddModelError("ConflitoEdicao", "Já existe uma questão com este enunciado para a mesma matéria.");
 
         if (!ModelState.IsValid)
@@ -158,8 +164,9 @@ public class QuestaoController : Controller
     public IActionResult ExcluirConfirmado(Guid id)
     {
         Questao questaoSelecionada = repositorioQuestao.SelecionarRegistroPorId(id)!;
+        List<Teste> testes = repositorioTeste.SelecionarRegistros();
 
-        if (contexto.Testes.Any(t => t.Questoes.Any(q => q.Id == id)))
+        if (testes.Any(t => t.Questoes.Any(q => q.Id.Equals(id))))
         {
             ModelState.AddModelError("ConflitoExclusao", "Não é possível excluir a questão pois ela está vinculada a testes.");
 
@@ -308,7 +315,7 @@ public class QuestaoController : Controller
         Questao questao = repositorioQuestao.SelecionarRegistroPorId(id)!;
 
         foreach (Alternativa a in questao.Alternativas)
-            a.EstaCorreta = (a.Id == idAlternativaCorreta);
+            a.EstaCorreta = (a.Id.Equals(idAlternativaCorreta));
 
         contexto.SaveChanges();
 

@@ -1,5 +1,6 @@
 ﻿using GeradorDeTestes.Dominio.ModuloDisciplina;
 using GeradorDeTestes.Dominio.ModuloMateria;
+using GeradorDeTestes.Dominio.ModuloQuestao;
 using GeradorDeTestes.Infraestrutura.ORM.Compartilhado;
 using GeradorDeTestes.WebApp.Extensions;
 using GeradorDeTestes.WebApp.Models;
@@ -13,13 +14,17 @@ namespace GeradorDeTestes.WebApp.Controllers;
 public class MateriaController : Controller
 {
     private readonly GeradorDeTestesDbContext contexto;
-    private readonly IRepositorioMateria repositorioMateria;
     private readonly IRepositorioDisciplina repositorioDisciplina;
-    public MateriaController(GeradorDeTestesDbContext contexto, IRepositorioMateria repoitorioMateria, IRepositorioDisciplina repositorioDisciplina)
+    private readonly IRepositorioMateria repositorioMateria;
+    private readonly IRepositorioQuestao repositorioQuestao;
+
+    public MateriaController(GeradorDeTestesDbContext contexto, IRepositorioDisciplina repositorioDisciplina,
+        IRepositorioMateria repositorioMateria, IRepositorioQuestao repositorioQuestao)
     {
         this.contexto = contexto;
-        this.repositorioMateria = repoitorioMateria;
         this.repositorioDisciplina = repositorioDisciplina;
+        this.repositorioMateria = repositorioMateria;
+        this.repositorioQuestao = repositorioQuestao;
     }
 
     [HttpGet("")]
@@ -44,8 +49,8 @@ public class MateriaController : Controller
     {
         Disciplina disciplinaSelecionada = repositorioDisciplina.SelecionarRegistroPorId(cadastrarVM.DisciplinaId)!;
 
-        if (repositorioMateria.SelecionarRegistros().Any(m => m.Nome == cadastrarVM.Nome
-        && m.Disciplina.Id == cadastrarVM.DisciplinaId && m.Serie == cadastrarVM.Serie))
+        if (repositorioMateria.SelecionarRegistros().Any(m => m.Nome.Equals(cadastrarVM.Nome)
+        && m.Disciplina.Id.Equals(cadastrarVM.DisciplinaId) && m.Serie.Equals(cadastrarVM.Serie)))
         {
             ModelState.AddModelError("ConflitoCadastro", "Já existe uma matéria com este nome para a mesma disciplina e série.");
         }
@@ -82,7 +87,7 @@ public class MateriaController : Controller
     {
         Materia materia = repositorioMateria.SelecionarRegistroPorId(id)!;
 
-        List<Disciplina> disciplinas = contexto.Disciplinas.ToList();
+        List<Disciplina> disciplinas = repositorioDisciplina.SelecionarRegistros();
 
         if (materia == null)
             return NotFound();
@@ -95,8 +100,8 @@ public class MateriaController : Controller
     [HttpPost("editar/{id:Guid}")]
     public IActionResult Editar(Guid id, EditarMateriaViewModel editarVM)
     {
-        if (repositorioMateria.SelecionarRegistros().Any(m => m.Nome == editarVM.Nome
-        && m.Disciplina.Id == editarVM.DisciplinaId && m.Serie == editarVM.Serie && m.Id != id))
+        if (repositorioMateria.SelecionarRegistros().Any(m => m.Nome.Equals(editarVM.Nome)
+        && m.Disciplina.Id.Equals(editarVM.DisciplinaId) && m.Serie.Equals(editarVM.Serie) && m.Id != id))
         {
             ModelState.AddModelError("ConflitoEdicao", "Já existe outra matéria com este nome para a mesma disciplina e série.");
         }
@@ -147,8 +152,9 @@ public class MateriaController : Controller
     public IActionResult ExcluirConfirmado(Guid id)
     {
         Materia materia = repositorioMateria.SelecionarRegistroPorId(id)!;
+        List<Questao> questoes = repositorioQuestao.SelecionarRegistros();
 
-        if (contexto.Questoes.Any(q => q.Materia.Id == id))
+        if (questoes.Any(q => q.Materia.Id.Equals(id)))
         {
             ModelState.AddModelError("ConflitoExclusao", "Não é possível excluir a matéria pois ela possui questões associadas.");
 

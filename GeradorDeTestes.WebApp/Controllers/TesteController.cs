@@ -7,7 +7,6 @@ using GeradorDeTestes.WebApp.Extensions;
 using GeradorDeTestes.WebApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace GeradorDeTestes.WebApp.Controllers;
@@ -17,13 +16,21 @@ public class TesteController : Controller
 {
     private readonly GeradorDeTestesDbContext contexto;
     private readonly GeradorPdfService geradorPdfService;
+    private readonly IRepositorioDisciplina repositorioDisciplina;
+    private readonly IRepositorioMateria repositorioMateria;
+    private readonly IRepositorioQuestao repositorioQuestao;
     private readonly IRepositorioTeste repositorioTeste;
 
-    public TesteController(GeradorDeTestesDbContext contexto, GeradorPdfService geradorPdfService, IRepositorioTeste repositorioTeste)
+    public TesteController(GeradorDeTestesDbContext contexto, GeradorPdfService geradorPdfService,
+        IRepositorioDisciplina repositorioDisciplina, IRepositorioMateria repositorioMateria,
+        IRepositorioQuestao repositorioQuestao, IRepositorioTeste repositorioTeste)
     {
         this.contexto = contexto;
-        this.repositorioTeste = repositorioTeste;
         this.geradorPdfService = geradorPdfService;
+        this.repositorioDisciplina = repositorioDisciplina;
+        this.repositorioMateria = repositorioMateria;
+        this.repositorioQuestao = repositorioQuestao;
+        this.repositorioTeste = repositorioTeste;
     }
 
     public IActionResult Index()
@@ -44,7 +51,7 @@ public class TesteController : Controller
     [HttpGet("cadastrar")]
     public IActionResult Cadastrar()
     {
-        List<Disciplina> disciplinas = contexto.Disciplinas.ToList();
+        List<Disciplina> disciplinas = repositorioDisciplina.SelecionarRegistros();
 
         CadastrarTesteViewModel cadastrarVM = new(disciplinas);
 
@@ -54,12 +61,14 @@ public class TesteController : Controller
     [HttpPost("cadastrar")]
     public IActionResult Cadastrar(CadastrarTesteViewModel cadastrarVM)
     {
+        List<Disciplina> disciplinas = repositorioDisciplina.SelecionarRegistros();
+
         if (repositorioTeste.SelecionarRegistros().Any(t => t.Titulo.Equals(cadastrarVM.Titulo)))
             ModelState.AddModelError("ConflitoCadastro", "Já existe um teste com este título.");
 
         if (!ModelState.IsValid)
         {
-            cadastrarVM.Disciplinas = contexto.Disciplinas.Select(d => new SelectListItem
+            cadastrarVM.Disciplinas = disciplinas.Select(d => new SelectListItem
             {
                 Text = d.Nome,
                 Value = d.Id.ToString()
@@ -68,7 +77,7 @@ public class TesteController : Controller
             return View(cadastrarVM);
         }
 
-        Disciplina disciplina = contexto.Disciplinas.FirstOrDefault(d => d.Id.Equals(cadastrarVM.DisciplinaId))!;
+        Disciplina disciplina = disciplinas.FirstOrDefault(d => d.Id.Equals(cadastrarVM.DisciplinaId))!;
 
         Teste novoTeste = cadastrarVM.ParaEntidade(disciplina);
 
@@ -103,15 +112,17 @@ public class TesteController : Controller
 
         List<Materia> materiasSelecionadas = testeSelecionado.Materias;
 
-        List<Materia> materias = contexto.Materias.Where(m => m.Disciplina.Equals(testeSelecionado.Disciplina))
+        List<Materia> materias = repositorioMateria.SelecionarRegistros().Where(m => m.Disciplina.Equals(testeSelecionado.Disciplina))
             .Where(m => m.Serie.Equals(testeSelecionado.Serie))
             .ToList();
+
+        List<Questao> questoes = repositorioQuestao.SelecionarRegistros();
 
         testeSelecionado.Questoes.Clear();
 
         foreach (TesteMateriaQuantidade q in testeSelecionado.QuantidadesPorMateria)
         {
-            List<Questao>? questoesDaMateria = contexto.Questoes
+            List<Questao> questoesDaMateria = questoes
                 .Where(questao => questao.Materia.Id.Equals(q.Materia.Id))
                 .Where(q => q.Finalizado)
                 .Take(q.QuantidadeQuestoes)
@@ -135,9 +146,8 @@ public class TesteController : Controller
 
                 foreach (Materia materia in materiasSelecionadas)
                 {
-                    List<Questao> questoesDaMateria = contexto.Questoes
-                        .Where(q => q.Materia.Id == materia.Id)
-                        .Where(q => q.Finalizado)
+                    List<Questao> questoesDaMateria = questoes
+                        .Where(q => q.Materia.Id.Equals(materia.Id) && q.Finalizado)
                         .Take(testeSelecionado.QuantidadeQuestoes)
                         .ToList();
 
@@ -174,7 +184,7 @@ public class TesteController : Controller
 
         if (!ModelState.IsValid)
         {
-            List<Materia> materias = contexto.Materias.Where(m => m.Disciplina.Id.Equals(testeSelecionado.Disciplina.Id)
+            List<Materia> materias = repositorioMateria.SelecionarRegistros().Where(m => m.Disciplina.Id.Equals(testeSelecionado.Disciplina.Id)
             && m.Serie.Equals(testeSelecionado.Serie)).ToList();
 
             FormGerarViewModel formGerarVM = testeSelecionado.ParaGerarTestePostVM(materias, testeSelecionado.Materias);
@@ -209,9 +219,7 @@ public class TesteController : Controller
     {
         Teste testeSelecionado = repositorioTeste.SelecionarRegistroPorId(id)!;
 
-        Materia materiaSelecionada = contexto.Materias
-                                .Include(m => m.Disciplina)
-                                .FirstOrDefault(m => m.Id.Equals(materiaId))!;
+        Materia materiaSelecionada = repositorioMateria.SelecionarRegistroPorId(materiaId)!;
 
         IDbContextTransaction transacao = contexto.Database.BeginTransaction();
 
@@ -238,9 +246,7 @@ public class TesteController : Controller
     {
         Teste testeSelecionado = repositorioTeste.SelecionarRegistroPorId(id)!;
 
-        Materia materiaSelecionada = contexto.Materias
-                                .Include(m => m.Disciplina)
-                                .FirstOrDefault(m => m.Id.Equals(materiaId))!;
+        Materia materiaSelecionada = repositorioMateria.SelecionarRegistroPorId(materiaId)!;
 
         IDbContextTransaction transacao = contexto.Database.BeginTransaction();
 
@@ -267,24 +273,21 @@ public class TesteController : Controller
     {
         Teste testeSelecionado = repositorioTeste.SelecionarRegistroPorId(id)!;
 
-        Materia materiaSelecionada = contexto.Materias.FirstOrDefault(m => m.Id.Equals(materiaId))!;
+        Materia materiaSelecionada = repositorioMateria.SelecionarRegistroPorId(materiaId)!;
 
         List<Questao> questoes = materiaSelecionada.Questoes.ToList();
 
-        Disciplina disciplina = contexto.Disciplinas
-                        .Include(m => m.Materias)
-                        .Include(m => m.Testes)
-                        .FirstOrDefault(m => m.Id == testeSelecionado.Disciplina.Id)!;
+        Disciplina disciplinaSelecionada = repositorioDisciplina.SelecionarRegistroPorId(testeSelecionado.Disciplina.Id)!;
 
-        List<Materia> materias = contexto.Materias.Where(m => m.Disciplina.Equals(disciplina))
-            .Where(m => m.Serie.Equals(testeSelecionado.Serie))
+        List<Materia> materias = repositorioMateria.SelecionarRegistros()
+            .Where(m => m.Disciplina.Equals(disciplinaSelecionada) && m.Serie.Equals(testeSelecionado.Serie))
             .ToList();
 
         DefinirQuantidadeQuestoesViewModel vm = new()
         {
             Id = testeSelecionado.Id,
             Titulo = testeSelecionado.Titulo,
-            NomeDisciplina = disciplina.Nome,
+            NomeDisciplina = disciplinaSelecionada.Nome,
             Serie = testeSelecionado.Serie,
             MateriaId = materiaId,
             Questoes = questoes.Select(q => new SelectListItem()
@@ -305,7 +308,7 @@ public class TesteController : Controller
         Materia materiaSelecionada = testeSelecionado.Materias.FirstOrDefault(m => m.Id.Equals(materiaId))!;
 
         TesteMateriaQuantidade? objComQuantidade = testeSelecionado.QuantidadesPorMateria
-            .FirstOrDefault(x => x.Materia.Id == materiaId);
+            .FirstOrDefault(x => x.Materia.Id.Equals(materiaId));
 
         int quantidadeTotalQuestoes = testeSelecionado.QuantidadesPorMateria.Sum(q => q.QuantidadeQuestoes);
 
@@ -326,22 +329,24 @@ public class TesteController : Controller
         {
             List<Questao> questoes = materiaSelecionada.Questoes.ToList();
 
-            Disciplina disciplina = contexto.Disciplinas
-                .Include(d => d.Materias)
-                .First(d => d.Id == testeSelecionado.Disciplina.Id);
+            Disciplina disciplinaSelecionada = repositorioDisciplina.SelecionarRegistroPorId(testeSelecionado.Disciplina.Id)!;
 
-            List<Materia> materias = contexto.Materias
-                .Where(m => m.Disciplina.Id == disciplina.Id && m.Serie == testeSelecionado.Serie)
+            List<Materia> materias = repositorioMateria.SelecionarRegistros()
+                .Where(m => m.Disciplina.Equals(disciplinaSelecionada) && m.Serie.Equals(testeSelecionado.Serie))
                 .ToList();
 
             DefinirQuantidadeQuestoesViewModel definirVM = new DefinirQuantidadeQuestoesViewModel
             {
                 Id = testeSelecionado.Id,
                 Titulo = testeSelecionado.Titulo,
-                NomeDisciplina = disciplina.Nome,
+                NomeDisciplina = disciplinaSelecionada.Nome,
                 Serie = testeSelecionado.Serie,
                 MateriaId = materiaId,
-                Questoes = questoes.Select(q => new SelectListItem { Text = q.Enunciado, Value = q.Id.ToString() }).ToList()
+                Questoes = questoes.Select(q => new SelectListItem()
+                {
+                    Text = q.Enunciado,
+                    Value = q.Id.ToString()
+                }).ToList()
             };
 
             return View(definirVM);
@@ -351,6 +356,7 @@ public class TesteController : Controller
 
         try
         {
+
             if (vm.QuantidadeQuestoesMateria == 0 && objComQuantidade is not null)
             {
                 testeSelecionado.QuantidadesPorMateria.Remove(objComQuantidade);
@@ -406,8 +412,8 @@ public class TesteController : Controller
     {
         Teste testeSelecionado = repositorioTeste.SelecionarRegistroPorId(id)!;
 
-        List<Materia> materias = contexto.Materias.Where(m => m.Disciplina.Equals(testeSelecionado.Disciplina))
-            .Where(m => m.Serie.Equals(testeSelecionado.Serie))
+        List<Materia> materias = repositorioMateria.SelecionarRegistros()
+            .Where(m => m.Disciplina.Equals(testeSelecionado.Disciplina) && m.Serie.Equals(testeSelecionado.Serie))
             .ToList();
 
         materias.Shuffle();
@@ -429,9 +435,8 @@ public class TesteController : Controller
 
             foreach (Materia materia in materiasSelecionadas)
             {
-                List<Questao> questoesDaMateria = contexto.Questoes
-                    .Where(q => q.Materia.Id == materia.Id)
-                    .Where(q => q.Finalizado)
+                List<Questao> questoesDaMateria = repositorioQuestao.SelecionarRegistros()
+                    .Where(q => q.Materia.Id.Equals(materia.Id) && q.Finalizado)
                     .Take(testeSelecionado.QuantidadeQuestoes)
                     .ToList();
 
@@ -467,8 +472,8 @@ public class TesteController : Controller
 
         if (!ModelState.IsValid)
         {
-            List<Materia> materias = contexto.Materias.Where(m => m.Disciplina.Id.Equals(testeSelecionado.Disciplina.Id)
-            && m.Serie.Equals(testeSelecionado.Serie)).ToList();
+            List<Materia> materias = repositorioMateria.SelecionarRegistros()
+                .Where(m => m.Disciplina.Id.Equals(testeSelecionado.Disciplina.Id) && m.Serie.Equals(testeSelecionado.Serie)).ToList();
 
             FormGerarViewModel formGerarVM = testeSelecionado.ParaGerarTestePostVM(materias, testeSelecionado.Materias);
 
@@ -508,7 +513,7 @@ public class TesteController : Controller
     [HttpPost("duplicar/{id:guid}")]
     public IActionResult Duplicar(Guid id, DuplicarViewModel duplicarVM)
     {
-        if (repositorioTeste.SelecionarRegistros().Any(t => t.Titulo == duplicarVM.Titulo))
+        if (repositorioTeste.SelecionarRegistros().Any(t => t.Titulo.Equals(duplicarVM.Titulo)))
             ModelState.AddModelError("ConflitoCadastro", "Já existe um teste com este título.");
 
         if (!ModelState.IsValid)
