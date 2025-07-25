@@ -3,17 +3,17 @@ using System;
 using GeradorDeTestes.Infraestrutura.ORM.Compartilhado;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
 {
     [DbContext(typeof(GeradorDeTestesDbContext))]
-    [Migration("20250722035831_Add_Initial_Configs")]
-    partial class Add_Initial_Configs
+    [Migration("20250723052300_Add_Initial_Configs_Postgre")]
+    partial class Add_Initial_Configs_Postgre
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,18 +21,18 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.18")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("GeradorDeTestes.Dominio.ModuloDisciplina.Disciplina", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -42,17 +42,17 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
             modelBuilder.Entity("GeradorDeTestes.Dominio.ModuloMateria.Materia", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("DisciplinaId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Serie")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -64,17 +64,17 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
             modelBuilder.Entity("GeradorDeTestes.Dominio.ModuloQuestao.Alternativa", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("EstaCorreta")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("QuestaoId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Texto")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -86,20 +86,20 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
             modelBuilder.Entity("GeradorDeTestes.Dominio.ModuloQuestao.Questao", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Enunciado")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("Finalizado")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("MateriaId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -111,29 +111,29 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
             modelBuilder.Entity("GeradorDeTestes.Dominio.ModuloTeste.Teste", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("DisciplinaId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("EhProvao")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("Finalizado")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("QuantidadeQuestoes")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Serie")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Titulo")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -146,16 +146,16 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("MateriaId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("QuantidadeQuestoes")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("TesteId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -169,10 +169,10 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
             modelBuilder.Entity("MateriaTeste", b =>
                 {
                     b.Property<Guid>("MateriasId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("TestesId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("MateriasId", "TestesId");
 
@@ -184,10 +184,10 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
             modelBuilder.Entity("QuestaoTeste", b =>
                 {
                     b.Property<Guid>("QuestoesId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("TestesId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("QuestoesId", "TestesId");
 

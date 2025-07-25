@@ -134,6 +134,9 @@ public class TesteController : Controller
             }
         }
 
+        contexto.Testes.Update(testeSelecionado);
+        contexto.SaveChanges();
+
         if (TempData["Embaralhar"] is not null)
         {
             testeSelecionado.Questoes.Clear();
@@ -165,6 +168,7 @@ public class TesteController : Controller
                     repositorioTeste.AtualizarQuantidadePorMateria(testeSelecionado, questao.Materia);
                 }
             }
+            contexto.Testes.Update(testeSelecionado);
             contexto.SaveChanges();
             testeSelecionado.Questoes.Shuffle();
         }
@@ -454,6 +458,7 @@ public class TesteController : Controller
                 repositorioTeste.AtualizarQuantidadePorMateria(testeSelecionado, questao.Materia);
             }
         }
+        contexto.Testes.Update(testeSelecionado);
         contexto.SaveChanges();
         testeSelecionado.Questoes.Shuffle();
 

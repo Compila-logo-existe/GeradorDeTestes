@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
 {
     /// <inheritdoc />
-    public partial class Add_Initial_Configs : Migration
+    public partial class Add_Initial_Configs_Postgre : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,8 +15,8 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 name: "Disciplinas",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Nome = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Nome = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -27,10 +27,10 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 name: "Materias",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Nome = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DisciplinaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Serie = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Nome = table.Column<string>(type: "text", nullable: false),
+                    DisciplinaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Serie = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -47,14 +47,14 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 name: "Testes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Titulo = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DisciplinaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Serie = table.Column<int>(type: "int", nullable: false),
-                    EhProvao = table.Column<bool>(type: "bit", nullable: false),
-                    QuantidadeQuestoes = table.Column<int>(type: "int", nullable: false),
-                    Finalizado = table.Column<bool>(type: "bit", nullable: false),
-                    DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Titulo = table.Column<string>(type: "text", nullable: false),
+                    DisciplinaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Serie = table.Column<int>(type: "integer", nullable: false),
+                    EhProvao = table.Column<bool>(type: "boolean", nullable: false),
+                    QuantidadeQuestoes = table.Column<int>(type: "integer", nullable: false),
+                    Finalizado = table.Column<bool>(type: "boolean", nullable: false),
+                    DataCriacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -71,11 +71,11 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 name: "Questoes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Enunciado = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MateriaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Finalizado = table.Column<bool>(type: "bit", nullable: false),
-                    DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Enunciado = table.Column<string>(type: "text", nullable: false),
+                    MateriaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Finalizado = table.Column<bool>(type: "boolean", nullable: false),
+                    DataCriacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -92,8 +92,8 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 name: "MateriaTeste",
                 columns: table => new
                 {
-                    MateriasId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TestesId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    MateriasId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TestesId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -116,10 +116,10 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 name: "QuantidadesPorMateria",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MateriaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    QuantidadeQuestoes = table.Column<int>(type: "int", nullable: false),
-                    TesteId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    MateriaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    QuantidadeQuestoes = table.Column<int>(type: "integer", nullable: false),
+                    TesteId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -142,10 +142,10 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 name: "Alternativas",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Texto = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    QuestaoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    EstaCorreta = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Texto = table.Column<string>(type: "text", nullable: false),
+                    QuestaoId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EstaCorreta = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -162,8 +162,8 @@ namespace GeradorDeTestes.Infraestrutura.ORM.Migrations
                 name: "QuestaoTeste",
                 columns: table => new
                 {
-                    QuestoesId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TestesId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    QuestoesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TestesId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
